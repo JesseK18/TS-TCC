@@ -14,17 +14,11 @@ class TC(nn.Module):
         self.lsoftmax = nn.LogSoftmax()
         self.device = device
         
-        # self.projection_head = nn.Sequential(
-        #     nn.Linear(configs.TC.hidden_dim, configs.final_out_channels // 2),
-        #     nn.BatchNorm1d(configs.final_out_channels // 2),
-        #     nn.ReLU(inplace=True),
-        #     nn.Linear(configs.final_out_channels // 2, configs.final_out_channels // 4),
-        # )
         self.projection_head = nn.Sequential(
-            nn.Linear(configs.TC.hidden_dim, configs.final_out_channels),
-            nn.BatchNorm1d(configs.final_out_channels),
+            nn.Linear(configs.TC.hidden_dim, configs.final_out_channels // 2),
+            nn.BatchNorm1d(configs.final_out_channels // 2),
             nn.ReLU(inplace=True),
-            nn.Linear(configs.final_out_channels, configs.final_out_channels),
+            nn.Linear(configs.final_out_channels // 2, configs.final_out_channels // 4),
         )
 
         self.seq_transformer = Seq_Transformer(patch_size=self.num_channels, dim=configs.TC.hidden_dim, depth=4, heads=4, mlp_dim=64)

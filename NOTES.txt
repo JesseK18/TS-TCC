@@ -1,0 +1,59 @@
+Things to consider when implementing in TSCAR: 
+
+
+Run main on UCR datasets: 
+
+python main.py \
+  --experiment_description exp1 \
+  --run_description     run_1 \
+  --seed                18 \
+  --training_mode       self_supervised \
+  --selected_dataset    UCR \
+  --dataset_name        ECG5000 \
+  --device              cpu
+
+
+  python main.py \
+  --experiment_description exp1 \
+  --run_description     run_1 \
+  --seed                18 \
+  --training_mode       self_supervised \
+  --selected_dataset    UCR \
+  --dataset_name        Adiac \
+  --device              cpu
+
+python main.py \
+  --experiment_description exp2 \
+  --run_description     run_3 \
+  --seed                19 \
+  --training_mode       self_supervised \
+  --embeddings          1 \ 
+  --selected_dataset    UCR \
+  --dataset_name        Coffee \
+  --device              cpu
+
+
+
+  train for coffee new: 
+
+  python embs.py \
+  --dataset_name   Coffee \
+  --exp_desc       exp3 \
+  --run_desc       run_4 \
+  --seed           11 \
+  --ckpt_root      experiments_logs \
+  --device         cpu
+  
+train for facefour:
+
+  python main.py \
+  --experiment_description exp2 \
+  --run_description     run_5 \
+  --seed                18 \
+  --training_mode       self_supervised \
+  --selected_dataset    UCR \
+  --dataset_name        FaceFour \
+  --device              cpu
+
+
+  

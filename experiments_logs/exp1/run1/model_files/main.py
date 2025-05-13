@@ -22,19 +22,17 @@ parser.add_argument('--experiment_description', default='Exp1', type=str,
                     help='Experiment Description')
 parser.add_argument('--run_description', default='run1', type=str,
                     help='Experiment Description')
-parser.add_argument('--seed', default=18, type=int,
+parser.add_argument('--seed', default=0, type=int,
                     help='seed value')
 parser.add_argument('--training_mode', default='supervised', type=str,
                     help='Modes of choice: random_init, supervised, self_supervised, fine_tune, train_linear')
-parser.add_argument('--embeddings', default=1, type=int,
-                    help='Modes of choice for returning trained embeddings: 0=No, 1=yes')
-parser.add_argument('--selected_dataset', default='UCR', type=str,
+parser.add_argument('--selected_dataset', default='Epilepsy', type=str,
                     help='Dataset of choice: sleepEDF, HAR, Epilepsy, pFD, UCR')
 parser.add_argument('--dataset_name', default=None, type=str, 
                     help='If selected_dataset==UCR, the UCR series folder under data/UCR/')
 parser.add_argument('--logs_save_dir', default='experiments_logs', type=str,
                     help='saving directory')
-parser.add_argument('--device', default='cpu', type=str,
+parser.add_argument('--device', default='cuda', type=str,
                     help='cpu or cuda')
 parser.add_argument('--home_path', default=home_dir, type=str,
                     help='Project home directory')
@@ -53,7 +51,7 @@ else:
                             'data',
                             args.selected_dataset)
 
-embed = args.embeddings
+
 device = torch.device(args.device)
 experiment_description = args.experiment_description
 data_type = args.selected_dataset
@@ -96,10 +94,8 @@ configs.input_channels = int(shape[1])
 configs.features_len   = int(shape[2])
 configs.num_classes    = int(len(torch.unique(meta['labels'])))
 
-# configs.features_len = configs.features_len - configs.kernel_size + 1
-# configs.input_channels = int(meta['samples'].shape[1])
-# configs.features_len   = int(meta['samples'].shape[2])
-# configs.num_classes    = int(len(torch.unique(meta['labels'])))
+configs.features_len = configs.features_len - configs.kernel_size + 1
+
 #print(f'→ auto­configured: C={configs.input_channels}, T={configs.features_len}, K={configs.num_classes}')
 
 
@@ -129,18 +125,11 @@ logger.debug(f'Mode:    {training_mode}')
 logger.debug("=" * 45)
 
 # Load datasets
-#data_path = f"./data/{data_type}/{args.dataset_name}"####f"./data/{data_type}/"
+data_path = f"./data/{data_type}/{args.dataset_name}"####f"./data/{data_type}/"
 #train_dl, valid_dl, test_dl = data_generator(data_path, configs, training_mode)
 train_dl, valid_dl, test_dl = data_generator(data_dir, configs, training_mode)
 
-
-
-# batch = next(iter(train_dl))
-# x, y  = batch[0], batch[1]          # x: (B, C, T), y: (B,)
-# configs.input_channels = x.shape[1]
-# configs.features_len   = x.shape[2]
-# configs.num_classes    = int(len(torch.unique(y)))
-# logger.debug("Data loaded ...")
+logger.debug("Data loaded ...")
 
 # Load Model
 model = base_Model(configs).to(device)
@@ -203,50 +192,7 @@ if training_mode == "self_supervised":  # to do it only once
     copy_Files(os.path.join(logs_save_dir, experiment_description, run_description), data_type)
 
 # Trainer
-model, temporal_contr_model = Trainer(model, temporal_contr_model, model_optimizer, temporal_contr_optimizer, train_dl, valid_dl, test_dl, device, logger, configs, experiment_log_dir, training_mode)
-if embed == 1:
-    #configs.drop_last = False
-    print("yeiii")
-    # Extract embeddings
-    # all_embeds, all_labels = [], []
-    # with torch.no_grad():
-    #     for x, y, _, _ in train_dl:
-    #         x = x.to(device).float()
-    #         embeds = model(x)
-    #         all_embeds.append(embeds.cpu())
-    #         all_labels.append(y.cpu())
-    #     all_embeds = torch.cat(all_embeds, dim=0)
-    #     all_labels = torch.cat(all_labels, dim=0)
-
-    # np.save(os.path.join(experiment_log_dir, "embeddings.npy"), all_embeds.numpy())
-    # np.save(os.path.join(experiment_log_dir, "labels.npy"), all_labels.numpy())
-
-
-    all_embeds, all_labels = [], []
-    with torch.no_grad():
-        for x, y, _, _ in train_dl:
-            x = x.to(device).float()
-            _, feats = model(x)               # feats: (B, C_out, T_after)
-            #pooled   = feats.mean(dim=2)
-            _, embeds = temporal_contr_model(feats, feats) # (B, C_out)
-            #embeds   = tc.projection_head(pooled)  # (B, D)
-            all_embeds.append(embeds.cpu())
-            all_labels.append(y)
-        
-        if len(all_embeds) == 0:
-            raise RuntimeError(
-                "No embeddings collected – check that your data loader produced any output "
-                "(e.g. you passed --embeddings 1 or have samples in the selected dataset)."
-            )
-        all_embeds = torch.cat(all_embeds, dim=0)
-        all_labels = torch.cat(all_labels, dim=0)
-        print(all_embeds.shape, all_labels.shape)
-        print(all_embeds)
-        out_path = os.path.join(experiment_log_dir,  "embeddings.pt")
-        #out_path = home_dir + args.output_path or f"{args.dataset_name}_ssl_embs.pt"
-        torch.save({'embeddings': all_embeds, 'labels': all_labels}, out_path)
-        print(f"Saved {all_embeds.shape[0]} embeddings of dim {all_embeds.shape[1]} to {out_path}")
-
+Trainer(model, temporal_contr_model, model_optimizer, temporal_contr_optimizer, train_dl, valid_dl, test_dl, device, logger, configs, experiment_log_dir, training_mode)
 
 if training_mode != "self_supervised":
     # Testing
@@ -255,7 +201,3 @@ if training_mode != "self_supervised":
     _calc_metrics(pred_labels, true_labels, experiment_log_dir, args.home_path)
 
 logger.debug(f"Training time is : {datetime.now()-start_time}")
-if embed == 1:
-    print("yeii2")
-    #logger.debug(f"Embeddings are saved in {experiment_log_dir}")
-    #return all_embeds, all_labels

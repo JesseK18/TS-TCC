@@ -86,20 +86,20 @@ meta = torch.load(os.path.join(data_dir, 'train.pt'))
 
 x = meta['samples']
 # ensure x is tensor of shape (N, C, T)
-if isinstance(x, torch.Tensor):
-    shape = x.shape
-else:
-    shape = torch.from_numpy(x).shape
+# if isinstance(x, torch.Tensor):
+#     shape = x.shape
+# else:
+#     shape = torch.from_numpy(x).shape
 
 # overwrite the 3 critical params
-configs.input_channels = int(shape[1])
-configs.features_len   = int(shape[2])
-configs.num_classes    = int(len(torch.unique(meta['labels'])))
+# configs.input_channels = int(shape[1])
+# configs.features_len   = int(shape[2])
+# configs.num_classes    = int(len(torch.unique(meta['labels'])))
 
 # configs.features_len = configs.features_len - configs.kernel_size + 1
-# configs.input_channels = int(meta['samples'].shape[1])
-# configs.features_len   = int(meta['samples'].shape[2])
-# configs.num_classes    = int(len(torch.unique(meta['labels'])))
+configs.input_channels = int(meta['samples'].shape[1])
+configs.features_len   = int(meta['samples'].shape[2])
+configs.num_classes    = int(len(torch.unique(meta['labels'])))
 #print(f'→ auto­configured: C={configs.input_channels}, T={configs.features_len}, K={configs.num_classes}')
 
 
@@ -129,22 +129,27 @@ logger.debug(f'Mode:    {training_mode}')
 logger.debug("=" * 45)
 
 # Load datasets
-#data_path = f"./data/{data_type}/{args.dataset_name}"####f"./data/{data_type}/"
+data_path = f"./data/{data_type}/{args.dataset_name}"####f"./data/{data_type}/"
 #train_dl, valid_dl, test_dl = data_generator(data_path, configs, training_mode)
 train_dl, valid_dl, test_dl = data_generator(data_dir, configs, training_mode)
 
 
-
+# commented because line 90 takes care of it
 # batch = next(iter(train_dl))
-# x, y  = batch[0], batch[1]          # x: (B, C, T), y: (B,)
+# # in self_supervised mode train_dl returns (x, y, aug1, aug2), otherwise (x,y,_,_)
+# x = batch[0]  
+# y = batch[1]
+
+# # now x.shape = (B, C, T), y.shape = (B,)
 # configs.input_channels = x.shape[1]
 # configs.features_len   = x.shape[2]
 # configs.num_classes    = int(len(torch.unique(y)))
-# logger.debug("Data loaded ...")
+logger.debug("Data loaded ...")
 
 # Load Model
 model = base_Model(configs).to(device)
 temporal_contr_model = TC(configs, device).to(device)
+#
 
 if training_mode == "fine_tune":
     # load saved model of this experiment
@@ -205,7 +210,6 @@ if training_mode == "self_supervised":  # to do it only once
 # Trainer
 model, temporal_contr_model = Trainer(model, temporal_contr_model, model_optimizer, temporal_contr_optimizer, train_dl, valid_dl, test_dl, device, logger, configs, experiment_log_dir, training_mode)
 if embed == 1:
-    #configs.drop_last = False
     print("yeiii")
     # Extract embeddings
     # all_embeds, all_labels = [], []
@@ -232,17 +236,12 @@ if embed == 1:
             #embeds   = tc.projection_head(pooled)  # (B, D)
             all_embeds.append(embeds.cpu())
             all_labels.append(y)
-        
-        if len(all_embeds) == 0:
-            raise RuntimeError(
-                "No embeddings collected – check that your data loader produced any output "
-                "(e.g. you passed --embeddings 1 or have samples in the selected dataset)."
-            )
+
         all_embeds = torch.cat(all_embeds, dim=0)
         all_labels = torch.cat(all_labels, dim=0)
         print(all_embeds.shape, all_labels.shape)
         print(all_embeds)
-        out_path = os.path.join(experiment_log_dir,  "embeddings.pt")
+        out_path = os.path.join(home_dir, experiment_description, run_description, "embeddings.pt")
         #out_path = home_dir + args.output_path or f"{args.dataset_name}_ssl_embs.pt"
         torch.save({'embeddings': all_embeds, 'labels': all_labels}, out_path)
         print(f"Saved {all_embeds.shape[0]} embeddings of dim {all_embeds.shape[1]} to {out_path}")

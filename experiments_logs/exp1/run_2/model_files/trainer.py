@@ -30,7 +30,7 @@ def Trainer(model, temporal_contr_model, model_optimizer, temp_cont_optimizer, t
         logger.debug(f'\nEpoch : {epoch}\n'
                      f'Train Loss     : {train_loss:.4f}\t | \tTrain Accuracy     : {train_acc:2.4f}\n'
                      f'Valid Loss     : {valid_loss:.4f}\t | \tValid Accuracy     : {valid_acc:2.4f}')
-# CONTINUE HERE
+
     os.makedirs(os.path.join(experiment_log_dir, "saved_models"), exist_ok=True)
     chkpoint = {'model_state_dict': model.state_dict(), 'temporal_contr_model_state_dict': temporal_contr_model.state_dict()}
     torch.save(chkpoint, os.path.join(experiment_log_dir, "saved_models", f'ckp_last.pt'))
@@ -42,7 +42,7 @@ def Trainer(model, temporal_contr_model, model_optimizer, temp_cont_optimizer, t
         logger.debug(f'Test loss      :{test_loss:0.4f}\t | Test Accuracy      : {test_acc:0.4f}')
 
     logger.debug("\n################## Training is Done! #########################")
-    return model, temporal_contr_model
+
 
 def model_train(model, temporal_contr_model, model_optimizer, temp_cont_optimizer, criterion, train_loader, config, device, training_mode):
     total_loss = []

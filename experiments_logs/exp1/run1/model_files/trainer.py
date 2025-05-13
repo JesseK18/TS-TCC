@@ -30,7 +30,7 @@ def Trainer(model, temporal_contr_model, model_optimizer, temp_cont_optimizer, t
         logger.debug(f'\nEpoch : {epoch}\n'
                      f'Train Loss     : {train_loss:.4f}\t | \tTrain Accuracy     : {train_acc:2.4f}\n'
                      f'Valid Loss     : {valid_loss:.4f}\t | \tValid Accuracy     : {valid_acc:2.4f}')
-# CONTINUE HERE
+
     os.makedirs(os.path.join(experiment_log_dir, "saved_models"), exist_ok=True)
     chkpoint = {'model_state_dict': model.state_dict(), 'temporal_contr_model_state_dict': temporal_contr_model.state_dict()}
     torch.save(chkpoint, os.path.join(experiment_log_dir, "saved_models", f'ckp_last.pt'))
@@ -42,7 +42,7 @@ def Trainer(model, temporal_contr_model, model_optimizer, temp_cont_optimizer, t
         logger.debug(f'Test loss      :{test_loss:0.4f}\t | Test Accuracy      : {test_acc:0.4f}')
 
     logger.debug("\n################## Training is Done! #########################")
-    return model, temporal_contr_model
+
 
 def model_train(model, temporal_contr_model, model_optimizer, temp_cont_optimizer, criterion, train_loader, config, device, training_mode):
     total_loss = []
@@ -51,16 +51,12 @@ def model_train(model, temporal_contr_model, model_optimizer, temp_cont_optimize
     temporal_contr_model.train()
 
     for batch_idx, (data, labels, aug1, aug2) in enumerate(train_loader):
-        # Check if batch dimensions are consistent
-        # if aug1.shape != aug2.shape:# data.shape[0] != labels.shape[0] or or data.shape[0] != aug1.shape[0]:
-        #     print(f"Skipping batch {batch_idx} due to inconsistent dimensions.")
-        #     continue
         # send to device
-        # print(f"batch {batch_idx}:",
-        #   "data", data.shape,
-        #   "labels", labels.shape,
-        #   "aug1", aug1.shape,
-        #   "aug2", aug2.shape)
+        print(f"batch {batch_idx}:",
+          "data", data.shape,
+          "labels", labels.shape,
+          "aug1", aug1.shape,
+          "aug2", aug2.shape)
         data, labels = data.float().to(device), labels.long().to(device)
         aug1, aug2 = aug1.float().to(device), aug2.float().to(device)
 
@@ -69,11 +65,6 @@ def model_train(model, temporal_contr_model, model_optimizer, temp_cont_optimize
         temp_cont_optimizer.zero_grad()
 
         if training_mode == "self_supervised":
-            #it is fine until here
-            # print("="*30)
-            # print(aug1.shape)
-            # print(aug2.shape)
-            # print("="*30)
             predictions1, features1 = model(aug1)
             predictions2, features2 = model(aug2)
 
