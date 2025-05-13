@@ -205,6 +205,7 @@ if training_mode == "self_supervised":  # to do it only once
 # Trainer
 model, temporal_contr_model = Trainer(model, temporal_contr_model, model_optimizer, temporal_contr_optimizer, train_dl, valid_dl, test_dl, device, logger, configs, experiment_log_dir, training_mode)
 if embed == 1:
+    #configs.drop_last = False
     print("yeiii")
     # Extract embeddings
     # all_embeds, all_labels = [], []

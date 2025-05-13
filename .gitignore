@@ -1,0 +1,9 @@
+# Ignore all files in the data directory
+data/
+
+# Ignore specific file types
+*.csv
+*.json
+
+# Ignore specific files
+secrets.txt
